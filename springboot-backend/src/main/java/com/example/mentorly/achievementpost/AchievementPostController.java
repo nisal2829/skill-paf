@@ -323,5 +323,4 @@ public class AchievementPostController {
 
         return ResponseEntity.ok(postDtos);
     }
-    
 }
