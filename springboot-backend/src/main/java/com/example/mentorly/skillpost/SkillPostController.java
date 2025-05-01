@@ -35,14 +35,14 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SkillPostController {
 
-    // private final SkillPostService skillPostService;
-    // private final UserService userService;
-    // private final SkillPostMapper skillPostMapper;
-    // private final CommentMapper commentMapper;
-    // private final NotificationMapper notificationMapper;
-    // private final AzureBlobStorageService storageService;
-    // private final NotificationService notificationService;
-    // private final VideoThumbnailService thumbnailService;
+    private final SkillPostService skillPostService;
+    private final UserService userService;
+    private final SkillPostMapper skillPostMapper;
+    private final CommentMapper commentMapper;
+    private final NotificationMapper notificationMapper;
+    private final AzureBlobStorageService storageService;
+    private final NotificationService notificationService;
+    private final VideoThumbnailService thumbnailService;
 
     private static final int MAX_VIDEO_DURATION_SECONDS = 30;
     private static final int MAX_IMAGES = 3;

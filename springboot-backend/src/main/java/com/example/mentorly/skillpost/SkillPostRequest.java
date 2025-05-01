@@ -18,12 +18,12 @@ public class SkillPostRequest {
     @NotBlank(message = "Title is required")
     private String title;
 
-    // private String description;
+    private String description;
 
-    // @Size(max = 3, message = "Maximum of 3 images allowed")
-    // private ArrayList<String> skillPostImageUrls;
+    @Size(max = 3, message = "Maximum of 3 images allowed")
+    private ArrayList<String> skillPostImageUrls;
 
-    // private String skillPostVideoUrl;
+    private String skillPostVideoUrl;
 
     private String skillPostVideoThumbnailUrl;
 

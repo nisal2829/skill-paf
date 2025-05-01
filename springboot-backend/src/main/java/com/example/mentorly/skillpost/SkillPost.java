@@ -22,7 +22,6 @@ import java.util.Set;
 public class SkillPost {
     @Id private ObjectId skillPostId;
     private String authorId;
-    private String authorId;
     private String authorName;
     private String authorProfileImageUrl;
     private ArrayList<String> skillPostImageUrls;
