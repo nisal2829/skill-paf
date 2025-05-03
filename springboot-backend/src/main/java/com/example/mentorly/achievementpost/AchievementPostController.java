@@ -36,19 +36,15 @@ public class AchievementPostController {
 
     @PostMapping
     public ResponseEntity<AchievementPostDto> saveAchievementPost(
-            @AuthenticationPrincipal OAuth2IntrospectionAuthenticatedPrincipal principal,
             @Valid @RequestBody AchievementPostRequest request
     ) {
         // Convert request to entity
         AchievementPost achievementPost = achievementPostMapper.toEntity(request);
 
-        // Set author details
-        String googleId = principal.getAttributes().get("sub").toString();
-        var user = userService.findByGoogleId(googleId);
-
-        achievementPost.setAuthorId(user.getId().toString());
-        achievementPost.setProfileImageUrl(user.getProfileImageUrl());
-        achievementPost.setAuthorName(principal.getName());
+        // Set default author details for unauthenticated requests
+        achievementPost.setAuthorId("anonymous");
+        achievementPost.setProfileImageUrl("");
+        achievementPost.setAuthorName("Anonymous User");
 
         // Save and convert to DTO
         AchievementPost savedPost = achievementPostService.save(achievementPost);
@@ -75,21 +71,10 @@ public class AchievementPostController {
     @PutMapping("/{achievement-post-id}")
     public ResponseEntity<AchievementPostDto> updateAchievementPost(
             @PathVariable("achievement-post-id") String achievementPostId,
-            @Valid @RequestBody AchievementPostRequest request,
-            @AuthenticationPrincipal OAuth2IntrospectionAuthenticatedPrincipal principal
+            @Valid @RequestBody AchievementPostRequest request
     ) {
         // Get existing post
         AchievementPost existingPost = achievementPostService.findById(achievementPostId);
-
-        // Check if user is the author
-        String googleId = principal.getAttributes().get("sub").toString();
-        String userId = userService.findByGoogleId(googleId)
-                .getId()
-                .toString();
-
-        if (!existingPost.getAuthorId().equals(userId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
 
         // Update fields while preserving metadata
         achievementPostMapper.updateEntityFromRequest(request, existingPost);
@@ -101,92 +86,45 @@ public class AchievementPostController {
 
     @DeleteMapping("/{achievement-post-id}")
     public ResponseEntity<Void> deleteAchievementPost(
-            @PathVariable("achievement-post-id") String achievementPostId,
-            @AuthenticationPrincipal OAuth2IntrospectionAuthenticatedPrincipal principal
+            @PathVariable("achievement-post-id") String achievementPostId
     ) {
-        // Get existing post
-        AchievementPost existingPost = achievementPostService.findById(achievementPostId);
-
-        // Check if user is the author
-        String googleId = principal.getAttributes().get("sub").toString();
-        String userId = userService.findByGoogleId(googleId)
-                .getId()
-                .toString();
-
-        if (!existingPost.getAuthorId().equals(userId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-
         achievementPostService.delete(achievementPostId);
         return ResponseEntity.noContent().build();
     }
 
-    // Social interaction endpoints
-
     @PostMapping("/{achievement-post-id}/like")
     public ResponseEntity<AchievementPostDto> likeAchievementPost(
-            @PathVariable("achievement-post-id") String achievementPostId,
-            @AuthenticationPrincipal OAuth2IntrospectionAuthenticatedPrincipal principal
+            @PathVariable("achievement-post-id") String achievementPostId
     ) {
-        String googleId = principal.getAttributes().get("sub").toString();
-        User user = userService.findByGoogleId(googleId);
-        String userId = user.getId().toString();
-
-        AchievementPost updatedPost = achievementPostService.addLike(achievementPostId, userId, user.getName());
-
+        AchievementPost updatedPost = achievementPostService.addLike(achievementPostId, "anonymous", "Anonymous User");
         return ResponseEntity.ok(achievementPostMapper.toDto(updatedPost));
     }
 
     @DeleteMapping("/{achievement-post-id}/like")
     public ResponseEntity<AchievementPostDto> unlikeAchievementPost(
-            @PathVariable("achievement-post-id") String achievementPostId,
-            @AuthenticationPrincipal OAuth2IntrospectionAuthenticatedPrincipal principal
+            @PathVariable("achievement-post-id") String achievementPostId
     ) {
-        String googleId = principal.getAttributes().get("sub").toString();
-        String userId = userService.findByGoogleId(googleId)
-                .getId()
-                .toString();
-
-        AchievementPost updatedPost = achievementPostService.removeLike(achievementPostId, userId);
+        AchievementPost updatedPost = achievementPostService.removeLike(achievementPostId, "anonymous");
         return ResponseEntity.ok(achievementPostMapper.toDto(updatedPost));
     }
 
     @PostMapping("/{achievement-post-id}/comments")
     public ResponseEntity<AchievementPostDto> addComment(
             @PathVariable("achievement-post-id") String achievementPostId,
-            @Valid @RequestBody CommentRequest commentRequest,
-            @AuthenticationPrincipal OAuth2IntrospectionAuthenticatedPrincipal principal
+            @Valid @RequestBody CommentRequest commentRequest
     ) {
         AchievementPost post = achievementPostService.findById(achievementPostId);
 
         // Set comment metadata
-        String googleId = principal.getAttributes().get("sub").toString();
-        var user = userService.findByGoogleId(googleId);
-
         Comment comment = commentMapper.toEntity(commentRequest);
-
         comment.setCommentId(new ObjectId());
-        comment.setAuthorId(user.getId().toString());
-        comment.setAuthorName(principal.getName());
-        comment.setProfileImageUrl(user.getProfileImageUrl());
+        comment.setAuthorId("anonymous");
+        comment.setAuthorName("Anonymous User");
+        comment.setProfileImageUrl("");
 
         // Add comment to post
         post.getComments().add(comment);
         AchievementPost updatedPost = achievementPostService.update(post);
-        //Add Notification
-        String notificationText = " commented on your " + "'" + post.getTitle() + "'" + " achievement post.";
-        NotificationDto notificationDto = new NotificationDto(
-                null,
-                post.getAuthorId(),
-                user.getName(),
-                post.getAchievementPostId().toHexString(),
-                NotificationType.COMMENT,
-                notificationText,
-                LocalDateTime.now(),
-                false
-        );
-
-        notificationService.create(notificationMapper.toEntity(notificationDto));
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(achievementPostMapper.toDto(updatedPost));
@@ -195,33 +133,11 @@ public class AchievementPostController {
     @DeleteMapping("/{achievement-post-id}/comments/{comment-id}")
     public ResponseEntity<AchievementPostDto> deleteComment(
             @PathVariable("achievement-post-id") String achievementPostId,
-            @PathVariable("comment-id") String commentId,
-            @AuthenticationPrincipal OAuth2IntrospectionAuthenticatedPrincipal principal
+            @PathVariable("comment-id") String commentId
     ) {
         AchievementPost post = achievementPostService.findById(achievementPostId);
-
-        // Get user ID
-        String googleId = principal.getAttributes().get("sub").toString();
-        String userId = userService.findByGoogleId(googleId)
-                .getId()
-                .toString();
-        ObjectId commentObjectId = new ObjectId(commentId);
-
-        // Find comment
-        Comment commentToDelete = post.getComments().stream()
-                .filter(c -> c.getCommentId().equals(commentObjectId))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Comment not found"));
-
-        // Check if user is either comment author or post owner
-        if (!commentToDelete.getAuthorId().equals(userId) && !post.getAuthorId().equals(userId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-
-        // Remove comment
-        post.getComments().removeIf(c -> c.getCommentId().equals(commentObjectId));
+        post.getComments().removeIf(comment -> comment.getCommentId().toHexString().equals(commentId));
         AchievementPost updatedPost = achievementPostService.update(post);
-
         return ResponseEntity.ok(achievementPostMapper.toDto(updatedPost));
     }
 
@@ -229,37 +145,16 @@ public class AchievementPostController {
     public ResponseEntity<AchievementPostDto> updateComment(
             @PathVariable("achievement-post-id") String achievementPostId,
             @PathVariable("comment-id") String commentId,
-            @Valid @RequestBody CommentRequest updatedCommentRequest,
-            @AuthenticationPrincipal OAuth2IntrospectionAuthenticatedPrincipal principal
+            @Valid @RequestBody CommentRequest updatedCommentRequest
     ) {
         AchievementPost post = achievementPostService.findById(achievementPostId);
-
-        // Get user ID
-        String googleId = principal.getAttributes().get("sub").toString();
-        String userId = userService.findByGoogleId(googleId)
-                .getId()
-                .toString();
-
-        ObjectId commentObjectId = new ObjectId(commentId);
-
-        // Find comment
-        Comment existingComment = post.getComments().stream()
-                .filter(c -> c.getCommentId().equals(commentObjectId))
+        post.getComments().stream()
+                .filter(comment -> comment.getCommentId().toHexString().equals(commentId))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Comment not found"));
-
-        // Check if user is comment author
-        if (!existingComment.getAuthorId().equals(userId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-
-        Comment updatedComment = commentMapper.toEntity(updatedCommentRequest);
-
-        // Update only the content, preserve metadata
-        existingComment.setContent(updatedComment.getContent());
-
+                .ifPresent(comment -> {
+                    comment.setContent(updatedCommentRequest.getContent());
+                });
         AchievementPost updatedPost = achievementPostService.update(post);
-
         return ResponseEntity.ok(achievementPostMapper.toDto(updatedPost));
     }
 
@@ -274,13 +169,8 @@ public class AchievementPostController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<List<AchievementPostDto>> getCurrentUserPosts(
-            @AuthenticationPrincipal OAuth2IntrospectionAuthenticatedPrincipal principal) {
-
-        String googleId = principal.getAttributes().get("sub").toString();
-        User user = userService.findByGoogleId(googleId);
-
-        List<AchievementPost> posts = achievementPostService.findByUserId(user.getId().toHexString());
+    public ResponseEntity<List<AchievementPostDto>> getCurrentUserPosts() {
+        List<AchievementPost> posts = achievementPostService.findByUserId("anonymous");
         List<AchievementPostDto> postDtos = posts.stream()
                 .map(achievementPostMapper::toDto)
                 .collect(Collectors.toList());
@@ -288,40 +178,20 @@ public class AchievementPostController {
     }
 
     @GetMapping("/feed")
-    public ResponseEntity<List<AchievementPostDto>> getFeed(
-            @AuthenticationPrincipal OAuth2IntrospectionAuthenticatedPrincipal principal) {
-
-        String googleId = principal.getAttributes().get("sub").toString();
-        User user = userService.findByGoogleId(googleId);
-
-        // Get IDs of users that the current user follows
-        List<String> followingIds = user.getFollowing().stream()
-                .map(ObjectId::toHexString)
-                .collect(Collectors.toList());
-
-        List<AchievementPost> posts = achievementPostService.getFeedForUser(
-                user.getId().toHexString(), followingIds);
-
+    public ResponseEntity<List<AchievementPostDto>> getFeed() {
+        List<AchievementPost> posts = achievementPostService.findAll();
         List<AchievementPostDto> postDtos = posts.stream()
                 .map(achievementPostMapper::toDto)
                 .collect(Collectors.toList());
-
         return ResponseEntity.ok(postDtos);
     }
 
     @GetMapping("/liked")
-    public ResponseEntity<List<AchievementPostDto>> getLikedPosts(
-            @AuthenticationPrincipal OAuth2IntrospectionAuthenticatedPrincipal principal) {
-
-        String googleId = principal.getAttributes().get("sub").toString();
-        User user = userService.findByGoogleId(googleId);
-
-        List<AchievementPost> posts = achievementPostService.findLikedByUser(user.getId().toHexString());
+    public ResponseEntity<List<AchievementPostDto>> getLikedPosts() {
+        List<AchievementPost> posts = achievementPostService.findLikedByUser("anonymous");
         List<AchievementPostDto> postDtos = posts.stream()
                 .map(achievementPostMapper::toDto)
                 .collect(Collectors.toList());
-
         return ResponseEntity.ok(postDtos);
     }
-    
 }
