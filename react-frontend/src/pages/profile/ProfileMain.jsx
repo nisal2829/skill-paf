@@ -11,7 +11,16 @@ import { useNotification } from "../../components/Notification/NotificationConte
 import { skillPostService } from "../../services/skillPostService";
 import { AuthContext } from "../../context/AuthContext";
 
-
+const ProfileMain = () => {
+    const { showNotification } = useNotification();
+    const [author, setAuthor] = useState();
+    const [skillPostLikes, setSkillPostLikes] = useState([]);
+    const [error, setError] = useState(null);
+    const [userBio, setUserBio] = useState('');
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const { isAuthenticated, logout } = useContext(AuthContext);
 
 
     useEffect(() => {
