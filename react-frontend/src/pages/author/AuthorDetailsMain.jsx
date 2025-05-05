@@ -25,6 +25,15 @@ const AuthorDetailsMain = ({
     currentUserFollows
 }) => {
 
+    const { showNotification } = useNotification();
+    const [state, setState] = useState(true);
+    const [isCurrentUserFollowing, setIsCurrentUserFollowing] = useState(currentUserFollows);
+    const [skillPosts, setSkillPosts] = useState([]);
+    const [milestonePosts, setMilestonePosts] = useState([]);
+    const [skillPostLoading, setSkillPostLoading] = useState(true);
+    const [milestonePostLoading, setMilestonePostLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
+    const [skillPostLikes, setSkillPostLikes] = useState([]);
 
     useEffect(() => {
         setIsCurrentUserFollowing(currentUserFollows);
