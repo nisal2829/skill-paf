@@ -33,6 +33,9 @@ public class AchievementPostController {
     private final NotificationService notificationService;
     private final AchievementPostMapper achievementPostMapper;
     private final CommentMapper commentMapper;
+
+
+
     private final NotificationMapper notificationMapper;
 
 
@@ -61,6 +64,8 @@ public class AchievementPostController {
         List<AchievementPostDto> dtos = allAchievementPosts.stream()
                 .map(achievementPostMapper::toDto)
                 .collect(Collectors.toList());
+
+
         return ResponseEntity.ok(dtos);
     }
 
@@ -76,6 +81,8 @@ public class AchievementPostController {
             @PathVariable("achievement-post-id") String achievementPostId,
             @Valid @RequestBody AchievementPostRequest request
     ) {
+
+        
         // Get existing post
         AchievementPost existingPost = achievementPostService.findById(achievementPostId);
 
