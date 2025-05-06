@@ -34,7 +34,7 @@ public class AchievementPostController {
     private final CommentMapper commentMapper;
 
 
-    
+
     private final NotificationMapper notificationMapper;
 
     @PostMapping
@@ -65,6 +65,8 @@ public class AchievementPostController {
         List<AchievementPostDto> dtos = allAchievementPosts.stream()
                 .map(achievementPostMapper::toDto)
                 .collect(Collectors.toList());
+
+                
         return ResponseEntity.ok(dtos);
     }
 
