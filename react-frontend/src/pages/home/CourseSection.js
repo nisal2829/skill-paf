@@ -7,6 +7,8 @@ const Course = () => {
     let tab1 = "Trending"
         
 
+
+    
     const tabStyle = 'react-filter';
 
     const [loading, setLoading] = useState(true);
