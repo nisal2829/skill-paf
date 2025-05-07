@@ -84,6 +84,8 @@ public class AchievementPostController {
             @AuthenticationPrincipal OAuth2IntrospectionAuthenticatedPrincipal principal
     ) {
 
+
+
         
         // Get existing post
         AchievementPost existingPost = achievementPostService.findById(achievementPostId);
