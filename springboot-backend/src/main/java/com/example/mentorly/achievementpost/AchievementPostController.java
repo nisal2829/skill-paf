@@ -66,7 +66,7 @@ public class AchievementPostController {
                 .map(achievementPostMapper::toDto)
                 .collect(Collectors.toList());
 
-                
+
         return ResponseEntity.ok(dtos);
     }
 
@@ -83,6 +83,8 @@ public class AchievementPostController {
             @Valid @RequestBody AchievementPostRequest request,
             @AuthenticationPrincipal OAuth2IntrospectionAuthenticatedPrincipal principal
     ) {
+
+        
         // Get existing post
         AchievementPost existingPost = achievementPostService.findById(achievementPostId);
 
