@@ -14,7 +14,5 @@ public interface SkillPostRepository extends MongoRepository<SkillPost, String> 
 
     List<SkillPost> findByLikedUserIdsContaining(String userId);
 
-    List<SkillPost> findByAuthorIdIn(List<String> authorIds, Sort sort);
-
     List<SkillPost> findBySkillName(String skillName, Sort sort);
 }
